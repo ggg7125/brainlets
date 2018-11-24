@@ -499,7 +499,7 @@ export class TestScene extends Scene{
         let s = new MapDecor({scene: this, key: 'spawnPlatform'})
         s.setPosition(this.worldBoundsX / 2, this.worldBoundsY / 2)
         s.setDepth(utils.layers().map4)
-        s.setScale(1.7)
+        s.setScale(2.6)
         s.setStatic(true)
         s.setSensor(true)
         s.canSpawnInWater = true

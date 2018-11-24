@@ -317,8 +317,6 @@ socket.on('disconnect', function(reason){
     location.reload() //just refresh the page sending them back to the title screen
 })
 
-var testNPCsGenerated = false
-
 //the server sends this to clients to tell them which socket.id is currently the authority on the world
 socket.on('setAuthority', function(data){
     let socketId = data[0]
@@ -327,20 +325,6 @@ socket.on('setAuthority', function(data){
     authoritySlot = playerSlot
     authorityHashId = utils.HashCode(authority)
     console.log(`authority changing to ${socketId}`)
-
-    //. THIS DOES NOT GO HERE IT IS A TEST. IT CAUSES THE PROBLEM OF MANY NEW NPCS SPAWNING EVERY TIME THE AUTHORITY CHANGES
-    /*if(!testNPCsGenerated){
-        testNPCsGenerated = true
-        for(let i = 0; i < 130; i++){
-            let x = Phaser.Math.RND.between(500, game.scene.scenes[1].worldBoundsX - 500)
-            let y = Phaser.Math.RND.between(500, game.scene.scenes[1].worldBoundsY - 500)
-            if(utils.Distance(x, y, game.scene.scenes[1].worldBoundsX / 2, game.scene.scenes[1].worldBoundsY / 2) < 2000) continue
-            let species = utils.Pick(['Wolf', 'Deer', 'Boar', 'Rabbit', 'Chicken', 'Lizard', 'Rat', 'Zombie'])
-            //let species = 'Zombie'
-            let enemy = CreateEnemy(species, x, y)
-            if(!enemy) break //non-authority attempt to create enemy
-        }
-    }*/
 })
 
 socket.on(utils.msg().explosion, function(data){
