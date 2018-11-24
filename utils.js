@@ -23,7 +23,7 @@ module.exports = {
     Distance: Distance,
 }
 
-var gameVersion = 0 //only clients and servers of the same version will be allowed to connect
+var gameVersion = 1 //only clients and servers of the same version will be allowed to connect
 
 function GameVersion(){
     return gameVersion
