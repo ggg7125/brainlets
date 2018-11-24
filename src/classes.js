@@ -220,6 +220,7 @@ export class SpriteAncestor extends Phaser.GameObjects.Sprite{
 
     //. seems damage only takes place on the authority - so this is being called on the authority
     TakeShieldDamage(dmg){
+        dmg *= 0.67
         this.AddShieldHealth(-dmg)
         if(this.shieldHealth <= 0){
             this.ShieldBreak()
@@ -1954,12 +1955,13 @@ setInterval(function(){
     if(!player) return //theyre not in the main scene yet
     if(socket.id != authority) return
     if(!treasureBag){
-        let x = Math.random() * game.scene.scenes[1].worldBoundsX
-        let y = Math.random() * game.scene.scenes[1].worldBoundsY
+        let x = Phaser.Math.RND.between(500, game.scene.scenes[1].worldBoundsX - 500)
+        let y = Phaser.Math.RND.between(500, game.scene.scenes[1].worldBoundsY - 500)
         let value = 100
         let bag = SpawnTreasureBagAt(x, y, value)
         treasureBag = bag
         setTimeout(function(){
+            if(bag == treasureBag) treasureBag = null
             if(bag) bag.Destroy(true)
         }, 60 * 1000)
     }
@@ -1998,6 +2000,7 @@ export class TreasureBag extends Sprite{
         })
 
         this.destroyDelegates.push(function(){
+            if(treasureBag == self) treasureBag = null
             RemoveFromRadar(self)
         })
     }

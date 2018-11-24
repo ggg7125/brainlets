@@ -62,7 +62,7 @@ const msg = {
     reportRoomInfo: 15,
     authorityBossCheck: 16, //when a new player logs in the authority will make them the Boss if there is none
     knockback: 17,
-
+    firstPlayerSpawnNpcs: 18,
     
     netvar: 20,
     storedData: 21, //storedData on the server is being sent to the new authority due to an authority change

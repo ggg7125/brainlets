@@ -672,6 +672,7 @@ class RoomData{
         socket.emit('setAuthority', [this.authority, this.authoritySocket.playerSlot]) //tell the client who the authority of the room is
         socket.emit('joinedRoomCreateLocalPlayer') //begin the process of the client creating their local player
         socket.emit(utils.msg().reportRoomInfo, this.roomId) //. NOT NEEDED. just reports debug info to the client about what room they just joined. uncomment whenever
+        if(this.clientCount == 1) socket.emit(utils.msg().firstPlayerSpawnNpcs) //you are the only one in this room, so spawn the initial set of npcs because there arent any existing yet
     }
 
     Leave(socket, callback){

@@ -435,6 +435,7 @@ export class Shield extends Ability{
         this.cooldownOnStop = 150
         this.stamDrain = 0
         this.weaponOverlay = null
+        this.sfx = null
     }
 
     CanPerform(){

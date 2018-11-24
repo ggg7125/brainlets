@@ -15,8 +15,8 @@ export function GetAllNPCs(){
 }
 
 //the authority uses this to create an npc and it then sends out a message to everyone else to spawn that same npc
-export function CreateEnemy(tag, x, y){
-    if(socket.id != authority){
+export function CreateEnemy(tag, x, y, skipAuthorityCheck){
+    if(!skipAuthorityCheck && socket.id != authority){
         console.log(`bug: non-authority attempt to create NPC. authority = ${authority}. id = ${socket.id}`)
         return
     }

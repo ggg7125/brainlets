@@ -284,6 +284,20 @@ socket.on('requestNpcList', function(data){
     socket.emit('fullNpcList', [socketId, roomId, npcsData])
 })
 
+//you are the first player to join this room, so spawn the initial set of npcs, because there arent any yet
+socket.on(utils.msg().firstPlayerSpawnNpcs, function(data){
+    for(let i = 0; i < 130; i++){
+        let x = Phaser.Math.RND.between(500, game.scene.scenes[1].worldBoundsX - 500)
+        let y = Phaser.Math.RND.between(500, game.scene.scenes[1].worldBoundsY - 500)
+        //if(utils.Distance(x, y, game.scene.scenes[1].worldBoundsX / 2, game.scene.scenes[1].worldBoundsY / 2) < 2000) continue
+        //let species = utils.Pick(['Wolf', 'Deer', 'Boar', 'Rabbit', 'Chicken', 'Lizard', 'Rat', 'Zombie'])
+        let species = 'Zombie'
+        let skipAuthorityCheck = true
+        let enemy = CreateEnemy(species, x, y, skipAuthorityCheck)
+        if(!enemy) break //non-authority attempt to create enemy
+    }
+})
+
 //* WARNING. this is not our socket being disconnected from the server. this is a message all clients get when any other client leaves the game.
 socket.on('disconnecting', function(socketId){
     //. since whoever this is left, remove them from our side of the game
@@ -315,7 +329,7 @@ socket.on('setAuthority', function(data){
     console.log(`authority changing to ${socketId}`)
 
     //. THIS DOES NOT GO HERE IT IS A TEST. IT CAUSES THE PROBLEM OF MANY NEW NPCS SPAWNING EVERY TIME THE AUTHORITY CHANGES
-    if(!testNPCsGenerated){
+    /*if(!testNPCsGenerated){
         testNPCsGenerated = true
         for(let i = 0; i < 130; i++){
             let x = Phaser.Math.RND.between(500, game.scene.scenes[1].worldBoundsX - 500)
@@ -326,7 +340,7 @@ socket.on('setAuthority', function(data){
             let enemy = CreateEnemy(species, x, y)
             if(!enemy) break //non-authority attempt to create enemy
         }
-    }
+    }*/
 })
 
 socket.on(utils.msg().explosion, function(data){
