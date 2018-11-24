@@ -1,0 +1,601 @@
+/*
+.something{} - finds a class with this name
+#something{} - finds an id with this name
+* an html element can have both a class and an id. it can have multiple classes in fact, separated by spaces like this class="class1 class2 class3". but only 1 id! never use spaces only dashes or underscores
+
+you can subtarget things like this
+.some-class div img{} - this would find a class we made named sub-class, find a div contained in it, find an img element contained in the div, then css style the img element - instead of some-class it can be some-id, or even just put 'body' or any element
+
+a:hover{}
+
+* someone said i may have to stay away from position:fixed so that the UI does not overlap with the Kongregate website (or any website, just an example)
+*/
+
+@font-face{
+    font-family: myFont;
+    src: url(zeldabreathofthewild.otf);
+}
+
+*{
+    padding:0;
+    margin:0;
+    border:0;
+    box-sizing: border-box;
+    font-family: myFont;
+    cursor: url(assets/ui/reticle.cur) 16 16, auto; /* the two offset numbers must be between 0-32 or it doesnt work. its the 'hotspot' of the cursor, so 16 16 is centered */
+}
+
+body{
+    background: rgb(0,0,0); /* also there is rgba(0,0,0,1), alpha is from 0-1 */
+    overflow: hidden; /* makes it so you cant scroll down the website, no scrollbar etc. although canvas has a 'bug' where it will cause a scrollbar to appear anyway, but we solve that by setting canvas to display: block instead of the default display: inline */
+}
+
+/* 'a' is 'links' and stands for anchor */
+a{
+    color: rgb(255, 100, 0);
+    text-decoration: none;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-weight: bold;
+}
+
+canvas{
+    width: 100%;
+    height: 100%;
+    padding:0;
+    margin:0;
+    border:0;
+    display: block; /* setting the canvas to 'block' instead of the default 'inline' gets rid of the annoying scrollbar 'bug' where a scrollbar appears anyway when the canvas resizes itself despite having overflow: hidden */
+}
+
+.container{
+    margin: 0 auto 0 auto;
+    position: relative; /* this literally does nothing unless you also use the top:0 and right:0 etc attributes to move it RELATIVE to the position it already has. if you use position: absolute then its not relative to itself, it will be at absolute coordinates within the browser
+    * position: fixed, will mean even if i scroll, the element will not go away, it will not move at all on the monitor, this is exactly what i want for my game UI, scrolling should not affect it
+    */
+    top:0vh;
+    left:0vw;
+}
+
+#fullscreenButton{
+    z-index: 99;
+    position: absolute;
+    top: 0vh;
+    left: 0vw;
+    /* width/height controlled by code, whats here doesnt matter except to make the button not HUUUUUGE when the game starts */
+    width: 0;
+    height: 0;
+}
+
+#statsButton{
+    z-index: 99;
+    position: absolute;
+    top: 1vh;
+    left: 4vw;
+    /* width/height controlled by code */
+}
+
+#moneyIcon{
+    z-index: 99;
+    position: absolute;
+    top: 0.3vh;
+    left: 73.2vw;
+    pointer-events: none;
+}
+
+#moneyValue{
+    width: 10vw; /* vw = viewport widths */
+    height: 7vh;
+    position: absolute;
+    top: 0vh;
+    left: 73vw;
+    transform: translate(0%, 0%);
+    background: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 16px 32px 0 rgba(0,0,0,0.2), 0 12px 40px 0 rgba(0,0,0,0.19);
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-weight: bold;
+    font-size: 1.8vw;
+    color: rgb(255,255,255);
+    padding: 1vw;
+    text-align: right;
+    padding-top: 0.5vw;
+    pointer-events: none;
+}
+
+#nameField{
+    /*display:none; /* make it not show until told to 
+    * we can use javascript to set this so the name field and play buttons go away once the game starts */
+    /*position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /*. EXPLANATION: this is not what we thought. this is changing the ORIGIN of the element! instead of it being the top-left corner, -50% -50% will put the origin in the exact center of the element, which is very good for putting it at exactly the center of the screen with no visual offset from the origin not being at the real center of the element */
+    position: relative;
+    top: 6vh;
+    left: 1vw;
+    text-align: center;
+    font-size: 1.3vw;
+    width: 12.7vw;
+    height: 6vh;
+    border: 0;
+    font-weight: bold;
+    box-shadow: 0 16px 32px 0 rgba(0,0,0,0.2), 0 12px 40px 0 rgba(0,0,0,0.19);
+}
+
+#chatField{
+    position: absolute;
+    top: 70vh;
+    left: 50vw;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    font-size: 1.3vw;
+    width: 13vw;
+    height: 4.5vh;
+    box-shadow: 0 16px 32px 0 rgba(0,0,0,0.2), 0 12px 40px 0 rgba(0,0,0,0.19);
+    opacity: 0.67;
+    background-color: rgb(0,0,0);
+    color: rgb(255,255,255);
+    outline-style: solid;
+    outline-width: 1px;
+    outline-color: rgb(0,0,255);
+}
+
+#playButton{
+    text-align: center;
+    font-size: 1.3vw;
+    border: 0;
+    /*float: left; /* my understanding is this causes this element to float left until it collides with another element, to get rid of any empty space in between. and we want it to float to the nameField */
+    box-shadow: 0 16px 32px 0 rgba(0,0,0,0.2), 0 12px 40px 0 rgba(0,0,0,0.19);
+    color: rgb(255,255,255);
+    /*position: absolute;
+    transform: translate(125px, -50%); /* first number is half the width of the nameField that it is meant to be right next to */
+    position: relative;
+    top: 6vh;
+    left: 1vw;
+    background: rgb(0, 150, 0);
+    width: 6vw;
+    height: 6vh;
+    font-weight: bold;
+}
+
+#playButton:hover{
+    background: rgb(0, 100, 0);
+}
+
+#iogamesspaceButton{
+    text-align: center;
+    font-size: 1.3vw;
+    border: 0;
+    /*float: left; /* my understanding is this causes this element to float left until it collides with another element, to get rid of any empty space in between. and we want it to float to the nameField */
+    box-shadow: 0 16px 32px 0 rgba(0,0,0,0.2), 0 12px 40px 0 rgba(0,0,0,0.19);
+    color: rgb(255,255,255);
+    /*position: absolute;
+    transform: translate(125px, -50%); /* first number is half the width of the nameField that it is meant to be right next to */
+    position: absolute;
+    top: 100vh;
+    left: 100vw;
+    transform: translate(-100%, -100%);
+    background: rgba(0,0,0,0.5);
+    width: 10vw;
+    height: 5vh;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-weight: bold;
+}
+
+#discordButton{
+    width: 8vw; /* vw = viewport widths */
+    height: 8vw;
+    position: absolute;
+    top: 77vh;
+    left: 50vw;
+    transform: translate(-50%, -50%);
+    z-index: 99;
+}
+
+#mainBox{
+    width: 21vw; /* vw = viewport widths */
+    height: 50vh;
+    position: absolute;
+    top: 64vh;
+    left: 50vw;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 255, 0.5);
+    box-shadow: 0 16px 32px 0 rgba(0,0,0,0.2), 0 12px 40px 0 rgba(0,0,0,0.19);
+}
+
+#infoBox{
+    width: 30vw; /* vw = viewport widths */
+    height: 80vh;
+    position: absolute;
+    top: 52vh;
+    left: 78vw;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 255, 0.5);
+    box-shadow: 0 16px 32px 0 rgba(0,0,0,0.2), 0 12px 40px 0 rgba(0,0,0,0.19);
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-weight: bold;
+    font-size: 1.2vw;
+    color: rgb(255,255,255);
+    padding: 1.8vw;
+    text-align: center;
+    overflow-y: scroll;
+    padding-top: 0.5vw;
+}
+
+#infoBoxLeftAlign{
+    text-align: left;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-weight: bold;
+}
+
+#helpPopup{
+    width: 100vw; /* vw = viewport widths */
+    height: 10vh;
+    position: absolute;
+    top: 50vh;
+    left: 50vw;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.5);
+    box-shadow: 0 16px 32px 0 rgba(0,0,0,0.2), 0 12px 40px 0 rgba(0,0,0,0.19);
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-weight: bold;
+    font-size: 1.8vw;
+    color: rgb(255,255,255);
+    padding: 1.25vw;
+    text-align: center;
+    z-index: 99;
+    pointer-events: none;
+}
+
+#playerCount{
+    width: 10vw;
+    height: 6vh;
+    position: absolute;
+    top: 0vh;
+    left: 100vw;
+    transform: translate(-100%, 0%);
+    background: rgba(0,0,0,0.5);
+    box-shadow: 0 16px 32px 0 rgba(0,0,0,0.2), 0 12px 40px 0 rgba(0,0,0,0.19);
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-weight: bold;
+    font-size: 1.7vw;
+    color: rgb(255,255,255);
+    padding: 0.35vw;
+    text-align: center;
+    pointer-events: none;
+}
+
+.allBars{
+    border-style: solid;
+    border-width: 4px;
+    border-radius: 15px; /* give all bars some nice rounded edges */
+    pointer-events: none;
+}
+
+#healthBackground{
+    width: 25vw;
+    height: 4vh;
+    position: absolute;
+    top: 96vh;
+    left: 0vw;
+    transform: translate(-0%, -100%);
+    background: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 16px 32px 0 rgba(0,0,0,0.2), 0 12px 40px 0 rgba(0,0,0,0.19);
+    pointer-events: none;
+}
+
+#healthBar{
+    border-color: rgb(190,0,0);
+    width: 0vw;
+    height: 4vh;
+    position: absolute;
+    top: 96vh;
+    left: 0vw;
+    transform: translate(-0%, -100%);
+    background: rgba(255, 0, 0, 1);
+    box-shadow: 0 16px 32px 0 rgba(0,0,0,0.2), 0 12px 40px 0 rgba(0,0,0,0.19);
+    z-index: 1;
+    transition: width 0.4s linear;
+}
+
+#healthBarText{
+    width: 25vw;
+    height: 4vh;
+    position: absolute;
+    top: 96vh;
+    left: 0vw;
+    transform: translate(0%, -75%);
+    z-index: 2;
+    color: rgb(255,255,255);
+    font-size: 2.5vh;
+    text-align: center;
+    pointer-events: none;
+}
+
+#staminaBarBackground{
+    width: 25vw;
+    height: 4vh;
+    position: absolute;
+    top: 100vh;
+    left: 0vw;
+    transform: translate(-0%, -100%);
+    background: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 16px 32px 0 rgba(0,0,0,0.2), 0 12px 40px 0 rgba(0,0,0,0.19);
+    pointer-events: none;
+}
+
+#staminaBar{
+    border-color: rgb(190,190,0);
+    width: 0vw;
+    height: 4vh;
+    position: absolute;
+    top: 100vh;
+    left: 0vw;
+    transform: translate(-0%, -100%);
+    background: rgba(222, 222, 0, 1);
+    box-shadow: 0 16px 32px 0 rgba(0,0,0,0.2), 0 12px 40px 0 rgba(0,0,0,0.19);
+    z-index: 1;
+    transition: width 0.4s linear;
+}
+
+#staminaBarText{
+    width: 25vw;
+    height: 4vh;
+    position: absolute;
+    top: 100vh;
+    left: 0vw;
+    transform: translate(0%, -75%);
+    z-index: 2;
+    color: rgb(255,255,255);
+    font-size: 2.5vh;
+    text-align: center;
+    pointer-events: none;
+}
+
+.levelUI{
+    /* HEY. The reason the stat ui doesnt scale quite proportionately is because we are mixing vw with vh on its elements. using just vw on everything will scale it proportionately */
+    width: 20vw;
+    height: 30vh;
+    position: absolute;
+    top: 14vh;
+    left: 1vw;
+    transform: translate(0%, 0%);
+    color: rgb(255,255,255);
+    font-size: 2vw;
+    pointer-events: none;
+}
+
+#statPoints{
+    top: 30vh;
+    left: 6vw;
+    position: absolute;
+    width: 25vw;
+    height: 3vw;
+    text-align: left;
+}
+
+.statBackground{
+    border-color: rgb(0,0,0);
+    border-style: solid;
+    border-width: 0.13vw;
+    border-top-left-radius: 1vw;
+    border-bottom-left-radius: 1vw;
+    position: absolute;
+    width: 13vw;
+    height: 5vh;
+}
+
+.statLabel{
+    z-index: 1;
+    text-align: left;
+    position: absolute;
+    width: 13vw;
+    height: 5vh;
+    left: 1vw;
+    top: 0vw;
+    transform: translate(0%, 8%);
+}
+
+.statValue{
+    z-index: 1;
+    text-align: left;
+    position: absolute;
+    width: 13vw;
+    height: 5vh;
+    left: 10.5vw;
+}
+
+.statButton{
+    z-index: 1;
+    border: 0;
+    text-align: center;
+    position: absolute;
+    width: 5vh;
+    height: 5vh;
+    left: 13vw;
+    font-size: 4vh;
+    color: rgb(0,0,0);
+    background: rgb(255,255,255);
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: bold;
+    border-style: solid;
+    border-width: 0.13vw;
+    border-top-right-radius: 1vw;
+    border-bottom-right-radius: 1vw;
+    pointer-events: all;
+}
+
+#powerBackground{
+    top: 0vh;
+    background: rgb(200,0,0);
+}
+
+#durabilityBackground{
+    top: 5vh;
+    background: rgb(0,60,235);
+}
+
+#speedBackground{
+    top: 10vh;
+    background: rgb(215, 100, 0);
+}
+
+#staminaBackground{
+    top: 15vh;
+    background: rgb(185,185,0);
+}
+
+#vitalityBackground{
+    top: 20vh;
+    background: rgb(0,150,0);
+}
+
+#spiritBackground{
+    top: 25vh;
+    background: rgb(0, 150, 215);
+}
+
+#powerButton{
+    top: 0vh;
+}
+
+#durabilityButton{
+    top: 5vh;
+}
+
+#speedButton{
+    top: 10vh;
+}
+
+#staminaButton{
+    top: 15vh;
+}
+
+#vitalityButton{
+    top: 20vh;
+}
+
+#spiritButton{
+    top: 25vh;
+}
+
+#powerLabel{
+    top: 0vh;
+}
+
+#durabilityLabel{
+    top: 5vh;
+}
+
+#speedLabel{
+    top: 10vh;
+}
+
+#staminaLabel{
+    top: 15vh;
+}
+
+#vitalityLabel{
+    top: 20vh;
+}
+
+#spiritLabel{
+    top: 25vh;
+}
+
+#powerStat{
+    top: 0vh;
+}
+
+#durabilityStat{
+    top: 5vh;
+}
+
+#speedStat{
+    top: 10vh;
+}
+
+#staminaStat{
+    top: 15vh;
+}
+
+#vitalityStat{
+    top: 20vh;
+}
+
+#spiritStat{
+    top: 25vh;
+}
+
+#xpBackground{
+    width: 30vw;
+    height: 3vh;
+    position: absolute;
+    top: 0vh;
+    left: 50vw;
+    transform: translate(-50%, 0%);
+    background: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 16px 32px 0 rgba(0,0,0,0.2), 0 12px 40px 0 rgba(0,0,0,0.19);
+    pointer-events: none;
+}
+
+#xpBar{
+    border-color: rgb(160,160,0);
+    border-width: 0;
+    width: 0vw;
+    height: 3vh;
+    position: absolute;
+    top: 0vh;
+    left: 50vw;
+    transform: translate(-50%, 0%);
+    background: rgba(200,200,0,1);
+    box-shadow: 0 16px 32px 0 rgba(0,0,0,0.2), 0 12px 40px 0 rgba(0,0,0,0.19);
+    z-index: 1;
+    transition: width 0.63s linear;
+    pointer-events: none;
+}
+
+#xpBarText{
+    width: 15vw;
+    height: 3vh;
+    position: absolute;
+    top: 0vh;
+    left: 50vw;
+    transform: translate(-50%, 12.5%);
+    z-index: 2;
+    color: rgb(255,255,255);
+    text-align: center;
+    font-size: 2.5vh;
+    pointer-events: none;
+}
+
+#gameTitle{
+    text-align: center;
+    font-size: 5vw;
+    position: absolute;
+    top: 25vh;
+    left: 50vw;
+    transform: translate(-50%, -50%);
+    color: rgb(255,255,255);
+    letter-spacing: 0.7vw;
+}
+
+#launchTime{
+    text-align: center;
+    font-size: 1.2vw;
+    position: absolute;
+    top: 92vh;
+    left: 50vw;
+    transform: translate(-50%, -50%);
+    color: rgb(255,255,255);
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+
+#wrongVersion{
+    text-align: center;
+    font-size: 3vw;
+    position: absolute;
+    top: 50vh;
+    left: 50vw;
+    transform: translate(-50%, -50%);
+    color: rgb(255,255,255);
+    letter-spacing: 0.7vw;
+}

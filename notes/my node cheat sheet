@@ -1,0 +1,7 @@
+"npm run build", will run webpack to bundle our code and minify. see package.json where we have defined the "build" command that sends the params needed to tell webpack to build the code.
+
+"npm run devbuild" same as above but wont minify. see it defined in package.json
+
+here is what we had there. we have changed it now. but if we ever need these back here they are
+"devbuild": "webpack --mode development --entry ./src/index.js --output ./dist/bundle.js",
+"build": "webpack --mode production --entry ./src/index.js --output ./dist/bundle.js"

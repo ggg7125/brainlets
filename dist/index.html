@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="description" content="io game">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+    <title>My Phaser Game</title>
+    <link rel='stylesheet' type='text/css' href='index.css'>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.slim.js"></script>
+    <script type="text/javascript" src="bundle.js"></script>
+</head>
+
+<body>
+    <div class='container' id='myPhaserGameRoot'>
+        <a href='https://iogames.space' target='_blank'>
+            <button id='iogamesspaceButton'>More IO Games</button>
+        </a>
+        <img src='assets/ui/itchFullscreenButton.png' id='fullscreenButton'>
+        <img src='assets/ui/statsButton.png' id='statsButton' hidden='true'>
+        <a href='https://discord.gg/VGkdays' target='_blank'>
+            <img src='assets/ui/discordButton.png' id='discordButton'>
+        </a>
+        <img src='assets/blueCrystal128.png' id='moneyIcon' hidden='true'>
+        <div id='moneyValue' hidden='true'>0</div>
+
+        <!-- this is a little box that shows up when the player tries to do something and it tells them like 'you need more coins for this!' or something -->
+        <div id='helpPopup' hidden='true'>
+            Help Text Here
+        </div>
+
+        <div id="titleUI" hidden='true'> <!-- it becomes unhidden when the title scene in the scenes js file loading bar reaches 100% -->
+            <div id="gameTitle">
+                Hello.io
+            </div>
+            <div id='launchTime'>
+                Game Launched X Days Ago
+            </div>
+            <div id='mainBox'>
+                <input type='text' pattern="[a-zA-Z0-9\s]+" name='Name-Field' id='nameField' placeholder='Enter Name' size='25' maxlength='20'/>
+                <button id='playButton'>Play</button>
+            </div>
+            <div id='infoBox'>
+                <a href="https://google.com">Click here to play on the main website, it runs faster!</a>
+                <br><br>
+                How to play:<br>
+                WASD / Arrows moves.<br>
+                Left Mouse Button (Or Z, or N): Use ability #1<br>
+                Right Mouse Button (Or X, or M): Use ability #2<br>
+                Enter to Talk<br>
+                <br>
+                When standing on a Weapon Platform press a mouse button to swap that weapon to it<br>
+                <br>
+                When standing on a Hat Platform press left mouse button to wear that hat<br>
+                <br>
+                Keep an eye on the radar for markers that may help you!
+                <br>
+                <div id='infoBoxLeftAlign'>
+                    Stats:<br>
+                    Power: Do more damage<br>
+                    Durability: Take more damage<br>
+                    Speed: Move faster, attack faster<br>
+                    Stamina: Don't get exhausted as fast<br>
+                    Vitality: Heal faster<br>
+                    Spirit: See farther - increase attack range - gain passive xp<br>
+                </div>
+            </div>
+        </div>
+
+        <div id='playerCount' hidden='true'>
+            0 Players
+        </div>
+
+        <div id='combatUI' hidden='true'>
+            <div id='xpBackground' class=allBars></div>
+            <div id='xpBar' class=allBars></div>
+            <div id='xpBarText'>Level 1</div>
+            
+            <div id='healthBackground' class='allBars'></div>
+            <div id='healthBar' class='allBars'></div>
+            <div id='healthBarText'>Health</div>
+
+            <div id='staminaBarBackground' class='allBars'></div>
+            <div id='staminaBar' class='allBars'></div>
+            <div id='staminaBarText'>Stamina</div>
+        </div>
+
+        <div id='levelUI' class='levelUI' hidden='true'>
+            <div id='statPoints'>Points: 0</div>
+
+            <div id='powerBackground' class='statBackground'></div> <!-- lets us add a colored background, like the background behind the 'power' stat might be red -->
+            <div id='powerLabel' class='statLabel'>Power</div>
+            <div id='powerStat' class='statValue'>0</div>
+            <button id='powerButton' class='statButton'>+</button>
+
+            <div id='durabilityBackground' class='statBackground'></div>
+            <div id='durabilityLabel' class='statLabel'>Durability</div>
+            <div id='durabilityStat' class='statValue'>0</div>
+            <button id='durabilityButton' class='statButton'>+</button>
+
+            <div id='speedBackground' class='statBackground'></div>
+            <div id='speedLabel' class='statLabel'>Speed</div>
+            <div id='speedStat' class='statValue'>0</div>
+            <button id='speedButton' class='statButton'>+</button>
+
+            <div id='staminaBackground' class='statBackground'></div>
+            <div id='staminaLabel' class='statLabel'>Stamina</div>
+            <div id='staminaStat' class='statValue'>0</div>
+            <button id='staminaButton' class='statButton'>+</button>
+
+            <div id='vitalityBackground' class='statBackground'></div>
+            <div id='vitalityLabel' class='statLabel'>Vitality</div>
+            <div id='vitalityStat' class='statValue'>0</div>
+            <button id='vitalityButton' class='statButton'>+</button>
+
+            <div id='spiritBackground' class='statBackground'></div>
+            <div id='spiritLabel' class='statLabel'>Spirit</div>
+            <div id='spiritStat' class='statValue'>0</div>
+            <button id='spiritButton' class='statButton'>+</button>
+        </div>
+        
+        <div class="phaserGame" id="phaser">
+            <!-- the phaser canvas will parent itself to this div, as shown by the settings in index.js -->
+        </div>
+
+        <!--HEY. dont bother setting maxlength of the chatField here. we do that in the javascript code when the player presses enter to prevent exploits-->
+        <input type="text" name='Chat-Input' id='chatField' placeholder='Type Message' size='25' maxlength='50' hidden='true'/>
+
+        <div id='wrongVersion' hidden='true'>
+            <p>Wrong game version. We could not connect!</p>
+            <br><br>
+            <a href="https://google.com">Click here to play on the main website!</a>
+        </div>
+    </div>
+</body>
+
+</html>
