@@ -1957,7 +1957,11 @@ setInterval(function(){
         let x = Math.random() * game.scene.scenes[1].worldBoundsX
         let y = Math.random() * game.scene.scenes[1].worldBoundsY
         let value = 100
-        treasureBag = SpawnTreasureBagAt(x, y, value)
+        let bag = SpawnTreasureBagAt(x, y, value)
+        treasureBag = bag
+        setTimeout(function(){
+            if(bag) bag.Destroy(true)
+        }, 60 * 1000)
     }
 }, 60 * 1000)
 
@@ -1990,8 +1994,11 @@ export class TreasureBag extends Sprite{
                 s.AddMoney(self.moneyValue)
             }
             if(treasureBag == self) treasureBag = null
-            RemoveFromRadar(self)
             self.Destroy(true)
+        })
+
+        this.destroyDelegates.push(function(){
+            RemoveFromRadar(self)
         })
     }
 }

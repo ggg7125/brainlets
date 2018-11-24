@@ -54,7 +54,7 @@ export function RefreshStats(){
 
 //this event occurs right after all html elements have loaded, but before any css is applied or any external images have been fully loaded (that would be the load/onload event)
 document.addEventListener('DOMContentLoaded', function(){
-    let days = (Date.now() - (new Date(2018, 10, 16).getTime())) / 1000 / 60 / 60 / 24 //. HEY! the months are from 0-11 not 1-12, 0 = January, 11 = December
+    let days = (Date.now() - (new Date(2018, 10, 24).getTime())) / 1000 / 60 / 60 / 24 //. HEY! the months are from 0-11 not 1-12, 0 = January, 11 = December
     document.getElementById('launchTime').textContent = `Game Launched ${Math.round(days)} Days Ago`
 
     //* stat plus buttons
