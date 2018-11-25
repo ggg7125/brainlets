@@ -216,14 +216,17 @@ function Pick(list){
 
 //* we are mostly using this to clone dictionaries, because if you have a dictionary named var1, and set var2 = var1, we are used to it created a COPY. but in javascript its a direct reference. if i change var2.value = something then var1.value is going to change itself too. because they're really the same object.
 function CloneObject(object){
+    //return Object.assign({}, object) //our attempt to make something faster than stringify but its a shallow copy whereas stringify is a deep copy - so idk if that will be a problem yet
+    //return {...object} //another attempt to make something faster than stringify - never tested if this works
+    //. the below works but its pretty slow i think the slowest think in the game with how often and on how many objects netvar updates have to loop on
     return JSON.parse(JSON.stringify(object))
 }
 
 //. seems to be radians?
 function shortAngleDist(a0,a1) {
-    var max = Math.PI*2;
-    var da = (a1 - a0) % max;
-    return 2*da % max - da;
+    var max = Math.PI * 2
+    var da = (a1 - a0) % max
+    return 2 * da % max - da
 }
 
 //. seems to take radians?

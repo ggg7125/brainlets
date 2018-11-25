@@ -156,7 +156,7 @@ export class SpriteAncestor extends Phaser.GameObjects.Sprite{
         if(!self.classRegenMod) return
         let delay = 0.2
         setInterval(function(){
-            if(!self || socket.id != authority) return //healing only happens on the authority i guess, since the authority just overrides it with health packet updates anyway
+            if(!self || !self.body || socket.id != authority) return //healing only happens on the authority since the authority just overrides it with health packet updates anyway
             let amount = 2 * delay * self.classRegenMod * self.RegenMod()
             if(InSafeZone(self.x, self.y)) amount += 10 * delay
             self.AddHealth(amount)
@@ -1276,7 +1276,7 @@ export class Enemy extends Entity{
         super(config)
         let self = this
         this.className = 'Enemy' //we use this as a tag to send over the network when net spawning a class so what class to spawn can be identified
-        this.netvarUpdateInterval = 1 / 13
+        this.netvarUpdateInterval = 1 / 10
         this.StartEnemyAI()
         this.caches = true //stops it from truly deleting when Destroy() is called, because we are going to just send them to the void and respawn them later instead
         this.meleeDelay = 1800 //we up their Entity.meleeDelay so that npcs attack pretty slow so players can take advantage of the delay and block then attack then block then attack etc

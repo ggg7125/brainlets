@@ -286,10 +286,14 @@ socket.on('requestNpcList', function(data){
 
 //you are the first player to join this room, so spawn the initial set of npcs, because there arent any yet
 socket.on(utils.msg().firstPlayerSpawnNpcs, function(data){
-    for(let i = 0; i < 130; i++){
-        let x = Phaser.Math.RND.between(500, game.scene.scenes[1].worldBoundsX - 500)
-        let y = Phaser.Math.RND.between(500, game.scene.scenes[1].worldBoundsY - 500)
-        //if(utils.Distance(x, y, game.scene.scenes[1].worldBoundsX / 2, game.scene.scenes[1].worldBoundsY / 2) < 2000) continue
+    for(let i = 0; i < 160; i++){
+        let x = 0
+        let y = 0
+        while(true){
+            x = Phaser.Math.RND.between(500, game.scene.scenes[1].worldBoundsX - 500)
+            y = Phaser.Math.RND.between(500, game.scene.scenes[1].worldBoundsY - 500)
+            if(utils.Distance(x, y, game.scene.scenes[1].worldBoundsX / 2, game.scene.scenes[1].worldBoundsY / 2) > 1500) break
+        }
         //let species = utils.Pick(['Wolf', 'Deer', 'Boar', 'Rabbit', 'Chicken', 'Lizard', 'Rat', 'Zombie'])
         let species = 'Zombie'
         let skipAuthorityCheck = true
