@@ -294,8 +294,8 @@ socket.on(utils.msg().firstPlayerSpawnNpcs, function(data){
             y = Phaser.Math.RND.between(500, game.scene.scenes[1].worldBoundsY - 500)
             if(utils.Distance(x, y, game.scene.scenes[1].worldBoundsX / 2, game.scene.scenes[1].worldBoundsY / 2) > 1500) break
         }
-        //let species = utils.Pick(['Wolf', 'Deer', 'Boar', 'Rabbit', 'Chicken', 'Lizard', 'Rat', 'Zombie'])
-        let species = 'Zombie'
+        let species = utils.Pick(['Wolf', 'Deer', 'Boar', 'Rabbit', 'Chicken', 'Lizard', 'Rat', 'Zombie'])
+        //let species = 'Zombie'
         let skipAuthorityCheck = true //because you are the first to join this room you are definitely the authority even if the message hasnt arrived to tell you yet, so spawn regardless
         let enemy = CreateEnemy(species, x, y, skipAuthorityCheck)
         if(!enemy) break //non-authority attempt to create enemy
