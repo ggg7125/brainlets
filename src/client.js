@@ -296,7 +296,7 @@ socket.on(utils.msg().firstPlayerSpawnNpcs, function(data){
         }
         //let species = utils.Pick(['Wolf', 'Deer', 'Boar', 'Rabbit', 'Chicken', 'Lizard', 'Rat', 'Zombie'])
         let species = 'Zombie'
-        let skipAuthorityCheck = true
+        let skipAuthorityCheck = true //because you are the first to join this room you are definitely the authority even if the message hasnt arrived to tell you yet, so spawn regardless
         let enemy = CreateEnemy(species, x, y, skipAuthorityCheck)
         if(!enemy) break //non-authority attempt to create enemy
     }
