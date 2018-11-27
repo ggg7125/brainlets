@@ -8,14 +8,15 @@ what only the authority gets the send to the relay server:
 
 import 'phaser'
 import {SetPlayer, GetPlayer, player} from './sceneTest'
-import {Player, RemotePlayer, SetSpriteId, NewSpriteId, spawnableClasses, ClassIndexToClassName} from './classes'
+import {Player, RemotePlayer, SetSpriteId, NewSpriteId, spawnableClasses, ClassIndexToClassName, NetSpawnFor} from './classes'
 import {game} from './index'
 import {CreateEnemy, GetAllNPCs, GetEnemySendableData, SpawnEnemyFromData} from './npcs'
-import {nameFieldValue, AddFloatingNameTo, ShowOverheadMessage} from './ui'
+import {nameFieldValue, AddFloatingNameTo, ShowOverheadMessage, HelpPopup} from './ui'
 import { GiveDefaultAbilities, StopAbilityByCode } from './abilityCore';
 import { allHats } from './hats';
 import { AddToRadar } from './radar';
-import { LocalExplosion } from './clientUtilsES6';
+import { LocalExplosion, NetTeleport } from './clientUtilsES6';
+import { gemHolder, LocalAssignGemHolder, InitPowerGem, powerGem, LocalRemovePowerGemFrom, NetAssignGemHolder, GemHolderLeftGameCheck } from './playerBoss';
 var utils = require('../utils')
 var clientUtils = require('./clientUtils')
 
@@ -105,8 +106,8 @@ socket.on(utils.msg().netvar, function(data){
 
 //if you got the storedData from the server, you were sent it because you are the new authority now, and you will use the storedData to continue updating the game where the last authority left off
 socket.on(utils.msg().storedData, function(data){
-    console.log('WE BECAME NEW AUTHORITY. storedData RECEIVED:')
-    console.log(data)
+    //console.log('WE BECAME NEW AUTHORITY. storedData RECEIVED:')
+    //console.log(data)
     let nonexistantSpriteIds = []
     let nonexistantplayerSlots = []
     //helper: storedData[roomId][category][id.toString()][varIndex.toString()] = value
@@ -244,7 +245,10 @@ socket.on('newRemotePlayer', function(data){
     let spriteName = data[4]
     let playerSlot = data[5]
     //if !player, they are at the title screen, so ignore remote player spawnings or theyll spawn in the wrong scene and never appear. they get sent a list of historical players when they log in anyway so thats how theyll spawn past players that way
-    if(GetPlayer()) AddRemotePlayerToScene(spriteId, socketId, x, y, spriteName, playerSlot)
+    if(GetPlayer()){
+        console.log('addremoteplayertoscene #1')
+        AddRemotePlayerToScene(spriteId, socketId, x, y, spriteName, playerSlot)
+    }
 })
 
 socket.on('spawnPastPlayers', function(data){
@@ -258,6 +262,7 @@ socket.on('spawnPastPlayers', function(data){
         let playerSlot = a[3]
         let x = a[4]
         let y = a[5]
+        console.log('addremoteplayertoscene #2')
         let sprite = AddRemotePlayerToScene(spriteId, socketId, x, y, spriteName, playerSlot)
     }
 })
@@ -284,8 +289,14 @@ socket.on('requestNpcList', function(data){
     socket.emit('fullNpcList', [socketId, roomId, npcsData])
 })
 
-//you are the first player to join this room, so spawn the initial set of npcs, because there arent any yet
-socket.on(utils.msg().firstPlayerSpawnNpcs, function(data){
+//. this is an important place to initialize the game from - this is a message the first player to join a room gets - without any players in the room the "game" essentially does not exist, there are no npcs etc - so this is where we initialize all the things that need to exist on the first authority who joins this room - npcs, the power gem, and so on
+socket.on(utils.msg().firstPlayerJoinedRoom, function(data){
+    NpcStartup()
+    InitPowerGem()
+    //console.log("first player join room message")
+})
+
+function NpcStartup(){
     for(let i = 0; i < 160; i++){
         let x = 0
         let y = 0
@@ -300,7 +311,7 @@ socket.on(utils.msg().firstPlayerSpawnNpcs, function(data){
         let enemy = CreateEnemy(species, x, y, skipAuthorityCheck)
         if(!enemy) break //non-authority attempt to create enemy
     }
-})
+}
 
 //* WARNING. this is not our socket being disconnected from the server. this is a message all clients get when any other client leaves the game.
 socket.on('disconnecting', function(socketId){
@@ -308,6 +319,7 @@ socket.on('disconnecting', function(socketId){
     for(let i = 0; i < remotePlayers.length; i++){
         var remotePlayer = remotePlayers[i]
         if(remotePlayer.socketId == socketId){
+            GemHolderLeftGameCheck(remotePlayer)
             remotePlayers = utils.remove(remotePlayers, remotePlayer)
             let fromAuthority = true //otherwise Destroy() will stop, thinking we dont have permission to destroy the player sprite
             remotePlayer.Destroy(fromAuthority) //this is our own function in the sprite class
@@ -392,8 +404,13 @@ socket.on(utils.msg().setPosition, function(data){
     let spriteId = data[0]
     let x = data[1]
     let y = data[2]
-    let sprite = clientUtils.GetEntityBySpriteId(spriteId)
-    if(sprite) clientUtils.SetPosition(sprite, x, y)
+    let sprite = clientUtils.GetSpriteBySpriteId(spriteId)
+    if(sprite){
+        sprite.posUpdate = [x,y] //we set these because if we dont LerpToPosUpdate is just going to put them back to this position until the next pos update arrives to tell them otherwise - which completely overrides our teleport coordinates by setting them back to the last sent update otherwise
+        sprite.slowPosUpdate = [x,y]
+        clientUtils.SetPosition(sprite, x, y)
+        //console.log(`.setPosition ${sprite.className} ${x}, ${y}`)
+    }
 })
 
 //this message is for debug purposes we can remove it in the final game to save an uneccessary emit
@@ -427,9 +444,16 @@ export function CreateLocalPlayer(newSpriteId, spriteName, playerSlot){
         let hat = allHats[0] //barbarian hat
         hat.Equip()
     }, 150) //we do 150 ms to just account for jitter to make sure our RemotePlayer is created by the time we add these here overlays and they get emitted, if theres no RemotePlayer to receive them yet due to jitter, then the emits get ignored
+    setTimeout(function(){
+        HelpPopup(`The red dot (bottom right) is the INFINITY STONE - It gives massive power to who holds it - If you can keep it...`, 6500)
+    }, 5000)
 }
 
 function AddRemotePlayerToScene(spriteId, socketId, xPos, yPos, spriteName, playerSlot){
+    if(!spriteId){
+        console.log(`MASSIVE BUG - PAY ATTENTION:`) //tells us to look that at the next message below which will explain that we have spawned a remote player with null spriteid & xpos & ypos etc - very bad - not sure why this happens yet
+    }
+    console.log(`RemotePlayer created with spriteId ${spriteId} at ${xPos}, ${yPos}`)
     let remoteConfig = {
         scene: game.scene.scenes[1],
         key: 'player',
@@ -439,11 +463,13 @@ function AddRemotePlayerToScene(spriteId, socketId, xPos, yPos, spriteName, play
     remoteSprite.playerSlot = playerSlot
     remoteSprite.spriteId = SetSpriteId(spriteId)
     remoteSprite.stateUpdater = socketId
-    remoteSprite.setPosition(xPos, yPos)
+    
+    if(xPos || yPos) remoteSprite.setPosition(xPos, yPos) //sometimes we just arent sending any x/y pos intentionally - though idk if we should keep doing that
+    else remoteSprite.setPosition(7500, 7500)
+
     remotePlayers.push(remoteSprite)
     clientUtils.PlayerListAdd(remoteSprite)
     AddFloatingNameTo(remoteSprite, spriteName)
-    console.log(`RemotePlayer created with spriteId ${remoteSprite.spriteId} at ${xPos}, ${yPos}`)
     return remoteSprite
 }
 
@@ -451,5 +477,5 @@ export function SendToPlayerSpawn(sprite){
     let x = game.scene.scenes[1].worldBoundsX / 2
     let y = game.scene.scenes[1].worldBoundsY / 2
     sprite.setPosition(x, y)
-    socket.emit(utils.msg().setPosition, [sprite.spriteId, x, y])
+    NetTeleport(sprite, x, y)
 }

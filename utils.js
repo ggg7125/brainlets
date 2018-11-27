@@ -62,8 +62,8 @@ const msg = {
     reportRoomInfo: 15,
     authorityBossCheck: 16, //when a new player logs in the authority will make them the Boss if there is none
     knockback: 17,
-    firstPlayerSpawnNpcs: 18,
-    
+    firstPlayerJoinedRoom: 18, //when the first player (and by default first authority) joins a room, nothing exists yet, this message tells them to spawn the first npcs and other initialization of things
+    tryGetPowerGem: 19,    
     netvar: 20,
     storedData: 21, //storedData on the server is being sent to the new authority due to an authority change
     destroySpriteOnRelay: 22,
@@ -78,6 +78,12 @@ const msg = {
     abilityWizardAoE: 29,
     abilitySword: 30,
     //* END ABILITY CODES
+
+    assignGemHolder: 50,
+    requestPowerGemData: 51,
+    netSpawnFor: 52,
+    removePowerGemFrom: 53,
+    givePowerGemData: 54,
 
     //* BEGIN HAT CODES
     barbarianHat: 100,

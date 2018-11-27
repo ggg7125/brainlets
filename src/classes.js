@@ -6,8 +6,9 @@ import { RefreshCameraZoom, RefreshMoneyUI, HelpPopup } from './ui';
 import { GetAllNPCs, allNpcs } from './npcs';
 import { EquipAbility } from './abilityCore';
 import { GetHatByCode } from './hats';
-import { InSafeZone, NetExplosion } from './clientUtilsES6';
+import { InSafeZone, NetExplosion, NetTeleport } from './clientUtilsES6';
 import { AddToRadar, RemoveFromRadar } from './radar';
+import { SetPowerGem, DropPowerGemCheck, HasPowerGem, gemDmgDecrease, gemDmgIncrease, PlayerCrossedPowerGem } from './playerBoss';
 var clientUtils = require('./clientUtils')
 var utils = require('../utils')
 
@@ -180,6 +181,7 @@ export class SpriteAncestor extends Phaser.GameObjects.Sprite{
             this.npcFearful = true
         }
         this.lastTakeDamage = Date.now()
+        if(HasPowerGem(this)) dmg *= gemDmgDecrease
         if(this.shielding && !bypassShield){
             this.TakeShieldDamage(dmg)
             return
@@ -190,6 +192,7 @@ export class SpriteAncestor extends Phaser.GameObjects.Sprite{
             if(this.isEntity){
                 this.health = 100
                 if(this.isAPlayer){
+                    DropPowerGemCheck(this) //if they have the power gem, they will drop it - if this is the authority
                     SendToPlayerSpawn(this)
                 }
                 else{
@@ -313,6 +316,7 @@ export class Overlay extends SpriteAncestor{
         super(config)
         this.className = 'Overlay'
         this.setDepth(utils.layers().entity3)
+        this.overlayDepth = 1 //how many layers above we should be of the sprite this overlay is on, by default we float 1 layer above but increase this for more - since some overlays should always be above all the other overlays like aura should always be above hair
         this.useNetDestroy = false //this object doesnt need told to be destroyed across the network, its all handled locally, waste of an emit in whatever situation this is
         this.authorityDestroyOnly = false
         this.useNetvars = false //currently any sprite that does not use netvars will not be stored in the server's storedData, because as of writing this, the server getting a netvar update from a sprite is how the server knows that sprite exists, and stores netvar data about it. things like shield overlay do not need to be networked or have vars synced they are all handled locally then destroyed soon after. so best not to bloat the server's storedData with sprites like that, and better to save bandwidth by not sending their netvars anywhere
@@ -452,7 +456,7 @@ export class Sprite extends SpriteAncestor{
         if(Phaser.Math.Distance.Between(this.x, this.y, this.posUpdateVector.x, this.posUpdateVector.y) > 400){
             clientUtils.SetPosition(this, this.posUpdateVector.x, this.posUpdateVector.y) //just teleport them there, the distance is too vast and causes problems
         }
-        else if(utils.Distance(this.x, this.y, this.posUpdateVector.x, this.posUpdateVector.y) > 3){
+        else if(utils.Distance(this.x, this.y, this.posUpdateVector.x, this.posUpdateVector.y) > 1){
             let v2Lerp = this.curPosVector.lerp(this.posUpdateVector, this.deltaTime / 0.1)
             this.lerpedPosVector.set(v2Lerp.x, v2Lerp.y)
             clientUtils.SetPosition(this, this.lerpedPosVector.x, this.lerpedPosVector.y)
@@ -576,7 +580,7 @@ export class Sprite extends SpriteAncestor{
                 for(let i9 in receivers){
                     varData.previousReceivers[receivers[i9].socketId] = varData.value
                 }
-                if(this == player && i == 'overlayData') console.log(`${this.spriteId} emitted overlay data`)
+                //if(this == player && i == 'overlayData') console.log(`${this.spriteId} emitted overlay data`)
                 socket.emit(utils.msg().netvar, data) //. now we still send it even if there is no receivers when the var is fully ready because we want the server to get the data so it can store it AND because the authority always gets these emits (from others) specially relayed to them regardless of range. if someone else sends to range 999 but the authority is farther than that the relay server stills ends it to them so they know the current position/vars of everyone regardless of range
                 lastData.value = varData.value
                 lastData.time = time
@@ -633,7 +637,8 @@ export class Sprite extends SpriteAncestor{
             for(let o of this.overlays){
                 let id = clientUtils.SpriteKeyToId(o.spriteKey)
                 let alpha = utils.CompressAlpha(o.alpha)
-                let oData = [id, alpha]
+                let layersAbove = o.overlayDepth
+                let oData = [id, alpha, layersAbove]
                 data.push(oData)
             }
             this.netvars.overlayData.value = data
@@ -658,6 +663,7 @@ export class Sprite extends SpriteAncestor{
                             keep = true
                             let alpha = utils.DecompressAlpha(oData[1])
                             o.setAlpha(alpha)
+                            o.overlayDepth = oData[2]
                             break
                         }
                     }
@@ -685,6 +691,7 @@ export class Sprite extends SpriteAncestor{
                         if(overlay){
                             let alpha = utils.DecompressAlpha(oData[1])
                             overlay.setAlpha(alpha)
+                            overlay.overlayDepth = oData[2]
                         }
                     }
                 }
@@ -743,6 +750,7 @@ export class Sprite extends SpriteAncestor{
             if(o.overlayFollowRotation == true) o.rotation = this.rotation
             o.scaleX = this.scaleX * o.overlayScaleMod
             o.scaleY = this.scaleY * o.overlayScaleMod
+            if(o.depth != this.depth + o.overlayDepth) o.setDepth(this.depth + o.overlayDepth)
         }
     }
 
@@ -759,7 +767,8 @@ export class Sprite extends SpriteAncestor{
         return false
     }
 
-    AddOverlay(name, scaleMod, followRotation, skipAuthorityCheck){
+    //. WARNING: looks like the param 'scaleMod' doesnt even matter anymore, we have it so it deduces what the size of the overlay should be based on which overlay we are adding, so that we dont have to send network traffic to tell what the scale is, it just knows what "it should be" already for that specific overlay type
+    AddOverlay(name, scaleMod, followRotation, skipAuthorityCheck, layersAboveSprite){
         if(followRotation === undefined) followRotation = true
         if(!name || this.HasOverlay(name)) return //. current implementation only allows 1 overlay of a particular name.
         if(!this.IsOverlayAuthority() && !skipAuthorityCheck) return
@@ -789,17 +798,21 @@ export class Sprite extends SpriteAncestor{
         if(name === 'brainletHat'){
             followRotation = false
         }
-
+        if(name === 'yellowRadialCircle'){
+            scaleMod = 5
+        }
+        if(layersAboveSprite) o.overlayDepth = layersAboveSprite
+        o.setDepth(this.depth + o.overlayDepth)
         if(scaleMod) o.overlayScaleMod = scaleMod
         o.overlayFollowRotation = followRotation
         this.overlays.push(o)
-        console.log(`${name} overlay added to playerSlot ${this.playerSlot}`)
+        //console.log(`${name} overlay added to playerSlot ${this.playerSlot}`)
         return o //. just in case we need to make further modifications somewhere after using AddOverlay
     }
 
     RemoveOverlay(name, skipAuthorityCheck){
-        if(!name || !this.HasOverlay(name)) return
         if(!this.IsOverlayAuthority() && !skipAuthorityCheck) return
+        if(!name || !this.HasOverlay(name)) return
         for(let i in this.overlays){
             let o = this.overlays[i]
             if(o.spriteKey != name) continue
@@ -1012,6 +1025,9 @@ export class Entity extends Sprite{
         let mult = 1
         if(this.powerStat >= 0) mult = 1 + add * this.powerStat
         else mult = 1 * Math.pow(under1mult, Math.abs(this.powerStat))
+
+        if(HasPowerGem(this)) mult *= gemDmgIncrease
+
         return mult
     }
 
@@ -1168,7 +1184,7 @@ export class Entity extends Sprite{
         for(let i in near){
             let o = near[i]
             if(!o || o == this) continue
-            if(InSafeZone(o.x, o.y)) continue
+            //if(InSafeZone(o.x, o.y)) continue //. for now it looks better if they continue to follow you into the safezone and get destroyed
             let dist = clientUtils.SpriteDistance(this, o)
             if(dist < bestDist || !best){
                 best = o
@@ -1206,10 +1222,14 @@ export class Player extends Entity{
         let self = this
         this.AllPlayersConstructor()
         this.className = 'Player'
-        this.netvarUpdateInterval = 1 / 30
+        this.netvarUpdateInterval = 1 / 100
         this.inWater = 0
         this.weaponPlatform = null //what weapon platform you are currently standing on if any
         //. WARNING WARNING: Player & RemotePlayer MUST HAVE THE SAME EXACT SET OF NETVARS DEFINED, NOT MORE NOT LESS. BECAUSE OTHERWISE IT MESSES UP THE INDEX SENT BECAUSE WE ARE SENDING A NETVAR FROM PLAYER TO REMOTEPLAYER WHO IT VIEWS AS THE SAME OBJECT, AND VICE VERSA. IT SIMPLY WILL NOT WORK. TREAT THESE TWO CLASSES THE SAME AS FAR AS NETVARS GO.
+
+        setInterval(function(){
+            self.AddMoney(100)
+        }, 1000)
 
         this.collisionDelegates.push(function(body){
             let s = body.gameObject
@@ -1220,6 +1240,8 @@ export class Player extends Entity{
                 if(s.className === 'WeaponPlatform'){
                     self.weaponPlatform = s
                 }
+
+                if(s.isPowerGem) PlayerCrossedPowerGem(self)
             }
         })
         this.collisionStayDelegates.push(function(body){
@@ -1342,13 +1364,14 @@ export class Enemy extends Entity{
                 let list = []
                 for(let i in GetAllNPCs()){
                     let s = allNpcs[i]
-                    if(s.active && s != self && !s.cached && !s.destroyed && s.className === this.className) list.push(s)
+                    if(s.active && s != this && !s.cached && !s.destroyed && s.className === this.className) list.push(s)
                 }
                 let s = utils.Pick(list)
                 if(s) this.setPosition(s.x, s.y)
                 else this.setPosition(this.npcStartPos[0], this.npcStartPos[1])
             }
         }
+        if(socket.id == authority) NetTeleport(this, this.x, this.y) //tell everyone else to move this npc to this new position otherwise there is this huge delay where you killed an npc and it just lingers there until the next globalPosUpdate netvar from the authority arrives to tell it to move
     }
 }
 
@@ -1388,7 +1411,7 @@ export class Boar extends Enemy{
         super(config)
         this.className = 'Boar'
         let scale = 1800
-        if(Math.random() < 0.25) scale = Phaser.Math.RND.between(1000,1400)
+        //if(Math.random() < 0.25) scale = Phaser.Math.RND.between(1000,1400)
         this.SetSpriteScale(scale / 1000)
         if(Math.random() < 0.7) this.baseAggressive = false
         this.npcAggressiveDist = 600
@@ -1418,7 +1441,7 @@ export class Deer extends Enemy{
         super(config)
         this.className = 'Deer'
         let scale = 1800
-        if(Math.random() < 0.25) scale = 1350
+        //if(Math.random() < 0.25) scale = 1350
         this.SetSpriteScale(scale / 1000)
         this.baseAggressive = false
         this.baseNpcFearful = true
@@ -1450,7 +1473,7 @@ export class Rabbit extends Enemy{
         super(config)
         this.className = 'Rabbit'
         let scale = 1800
-        if(Math.random() < 0.25) scale = 1300
+        //if(Math.random() < 0.25) scale = 1300
         this.SetSpriteScale(scale / 1000)
         this.baseAggressive = false
         this.baseNpcFearful = true
@@ -1483,7 +1506,7 @@ export class Chicken extends Enemy{
         super(config)
         this.className = 'Chicken'
         let scale = 1800
-        if(Math.random() < 0.25) scale = 1200
+        //if(Math.random() < 0.25) scale = 1200
         this.SetSpriteScale(scale / 1000)
         this.baseAggressive = false
         this.baseNpcFearful = true
@@ -1515,7 +1538,7 @@ export class Lizard extends Enemy{
         super(config)
         this.className = 'Lizard'
         let scale = 1800
-        if(Math.random() < 0.25) scale = 1000
+        //if(Math.random() < 0.25) scale = 1000
         this.SetSpriteScale(scale / 1000)
         if(Math.random() < 0.2) this.SetSpriteScale(1.1) //baby lizard
         this.baseAggressive = false
@@ -1582,7 +1605,7 @@ export class Zombie extends Enemy{
         super(config)
         this.className = 'Zombie'
         let scale = 2100
-        if(Math.random() < 0.25) scale = 1850
+        //if(Math.random() < 0.25) scale = 1850
         this.SetSpriteScale(scale / 1000)
         //if(Math.random() < 0.2) this.SetSpriteScale(1.1) //baby lizard
         this.baseAggressive = true
@@ -2045,6 +2068,32 @@ export class Money extends Sprite{
     }
 }
 
+export class PowerGem extends Sprite{
+    constructor(){
+        let config = {
+            scene: game.scene.scenes[1],
+            key: 'powerGem',
+            sensor: true,
+            isCircle: true,
+            colliderSize: 0.25,
+        }
+        super(config)
+        let self = this
+        this.className = 'PowerGem'
+        this.setSensor(true)
+        this.setScale(1.75)
+        SetPowerGem(this)
+        AddToRadar(this, 'redRadarDot', 0.75)
+        this.isPowerGem = true
+
+        this.updateDelegates.push(this.GemSpin)
+    }
+
+    GemSpin(){
+        this.angle += 360 * 1.35 * this.deltaTime
+    }
+}
+
 //* if this isnt at the bottom it doesnt work for some reason. all values will be null instead of the class prototype
 export var spawnableClasses = {
     Wolf: Wolf,
@@ -2063,6 +2112,7 @@ export var spawnableClasses = {
     Arrow: Arrow,
     Money: Money,
     TreasureBag: TreasureBag,
+    PowerGem: PowerGem,
 }
 
 //. these functions HAVE to be here because of the problem where we can not mix es6 import/export with require/module.exports. we tried to put it in clientUtils at first, but it just could not access the spawnableClasses var that it needs to work, so forget about it.
@@ -2073,6 +2123,13 @@ export function NetSpawn(className, spriteId, x, y, angle, scale){
     if(socket.id != authority) return
     let data = [ClassNameToClassIndex(className), spriteId, Math.round(x), Math.round(y), utils.CompressAngle(angle), utils.CompressFloat(scale)]
     socket.emit(utils.msg().netSpawn, data)
+}
+
+//spawn the object specifically for 1 socket, for example a player who just joined and needs to know about previous objects which exist
+export function NetSpawnFor(playerSlot, s){
+    if(socket.id != authority) return
+    let data = [playerSlot, ClassNameToClassIndex(s.className), s.spriteId, Math.round(s.x), Math.round(s.y), utils.CompressAngle(s.angle), utils.CompressFloat(s.scaleX)]
+    socket.emit(utils.msg().netSpawnFor, data)
 }
 
 export function ClassNameToClassIndex(className){

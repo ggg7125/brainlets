@@ -52,6 +52,8 @@ var spriteKeyId = {
     gokuHair: 13,
     killuaHair: 14,
     brainletHat: 15,
+    yellowRadialCircle: 16,
+    powerGem: 17,
 }
 
 function SpriteKeyToId(name){
@@ -275,6 +277,8 @@ function SetVelocity(s, x, y){
 
 function SetPosition(s, x, y){
     if(x != s.x || y != s.y) SetSleeping(s, false)
+    //s.posUpdate = [x,y] //we set these because if we dont LerpToPosUpdate is just going to put them back to the old position until the next pos update arrives to tell them otherwise - which completely negates our teleport coordinates here
+    //s.slowPosUpdate = [x,y]
     s.setPosition(x, y)
 }
 

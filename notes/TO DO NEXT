@@ -1,11 +1,6 @@
 THIS ILLUSTRATES WHY IT IS VERY IMPORTANT TO RELY ON THE AUTHORITY AS LITTLE AS POSSIBLE. THE AUTHORITY SHOULD INSTEAD INFORM THE RELAY SERVER CONSTANTLY OF ALL RELEVENT CHANGES AND THE SERVER WILL THEN BE ABLE TO RELIABLY TELL WHOEVER NEEDS IT. DON'T DELETE THIS ITS IMPORTANT. (i erased what it is referring to that illustrates the problem but trust me, you need to know this. extremely important)
 
 CURRENT AGENDA:
-    finish the playerBoss.js system
-    ---
-    so just let the players kill each other over a jewel of power or something and you are golden
-        add to radar - the jewel or who has it depending on context
-
     make shotgun an ability - heavy knockback - fightz does not have shotguns
         the projectile can look like a set of streamer things like in that other io game i think shootz.io maybe idk
     ---
@@ -14,7 +9,7 @@ CURRENT AGENDA:
         the du blood graphics might somehow work we got quite a few of them to choose from if i remember correctly
 
     ESSENTIALS TO LAUNCH THE GAME
-        https certificate & real domain name
+        https certificate & real domain name - looks like netlify and heroku will take care of that
         people using adblock should level like 1.5x slower - show a message saying theyll level faster with adblock off - or make them gain xp for watching an ad
         ads
             put an ad on the title screen in a box to the left of the enter name box like fightz.io has

@@ -4,10 +4,8 @@ import {socket} from './client'
 import {game} from './index'
 import { SetLastRenderUpdate } from './authority'
 import { RefreshCameraZoom, RefreshFullScreenButton, RefreshStatsToggle, RefreshMoneyUI } from './ui';
-import { lmb, rmb, EquipAbility } from './abilityCore';
-import { SetVelocity, SetPosition } from './clientUtils';
-import { allNpcs } from './npcs';
-import { RefreshRadar, AddToRadar } from './radar';
+import { lmb, rmb } from './abilityCore';
+import { AddToRadar } from './radar';
 var utils = require('../utils')
 var clientUtils = require('./clientUtils')
 
@@ -207,6 +205,7 @@ export class TestScene extends Scene{
         this.load.image('blueCrystal', 'assets/blueCrystal128.png')
         this.load.image('treasureBag', 'assets/treasureBag.png')
         this.load.image('powerGem', 'assets/powerGem.png')
+        this.load.image('yellowRadialCircle', 'assets/yellowRadialCircle.png')
         
         this.load.image('blueRadarDot', 'assets/radarDots/radarDotBlue.png')
         this.load.image('redRadarDot', 'assets/radarDots/radarDotRed.png')
@@ -395,8 +394,8 @@ export class TestScene extends Scene{
 
         this.input.on('pointerup', function(pointer){
             if(player){
-                if(pointer.buttons == 1) lmb.StopAbility(player)
-                if(pointer.buttons == 2) rmb.StopAbility(player)
+                if(pointer.buttons == 1 && lmb) lmb.StopAbility(player)
+                if(pointer.buttons == 2 && rmb) rmb.StopAbility(player)
             }
         })
 
@@ -465,8 +464,8 @@ export class TestScene extends Scene{
 
         //we are going to try to perform abilities on a loop instead of just the mouse 'on down' event so you can now just hold the button to continuously use it
         if(!chatting){
-            if(this.Ability1KeyDown()) lmb.TryAbility()
-            if(this.Ability2KeyDown()) rmb.TryAbility()
+            if(this.Ability1KeyDown() && lmb) lmb.TryAbility()
+            if(this.Ability2KeyDown() && rmb) rmb.TryAbility()
         }
     }
 

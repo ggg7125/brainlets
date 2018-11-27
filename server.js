@@ -100,6 +100,15 @@ io.on("connection", function(socket){
         BroadcastToAllRoomsOf(socket, utils.msg().netSpawn, data)
     })
 
+    socket.on(utils.msg().netSpawnFor, function(data){
+        //let data = [socket.hashId, ClassNameToClassIndex(s.className), s.spriteId, Math.round(s.x), Math.round(s.y), utils.CompressAngle(s.angle), utils.CompressFloat(s.scale)]
+        let playerSlot = data[0]
+        let otherSocket = FindSocketInRoomBySlot(socket.roomObject, playerSlot)
+        if(!otherSocket) return
+        let newData = [data[1], data[2], data[3], data[4], data[5], data[6]]
+        io.to(otherSocket.id).emit(utils.msg().netSpawn, newData) //. notice this is a netSpawn message, yea we use the same system as netSpawn just to a specific person now - so keep in mind the data format must be identical for netSpawn and netSpawnFor due to this, once it reaches this point where it is being sent to the specific person that is
+    })
+
     //. BEGIN ABILITY BLOCK
     //* all abilities must be specially sent to the authority regardless of range, or you have the problem of when theyre not in range of the authority their bullets dont spawn on the authority and they cant kill anything because damage occurs on the authority
     socket.on(utils.msg().abilityMelee, function(data){
@@ -233,6 +242,33 @@ io.on("connection", function(socket){
 
     socket.on(utils.msg().setPosition, function(data){
         IOEmitToAllRoomsOf(socket, utils.msg().setPosition, data)
+    })
+
+    //this is someone who has crossed the power gem and is trying to pick it up - it will be relayed to the authority who will determine if they should be allowed to get it
+    socket.on(utils.msg().tryGetPowerGem, function(data){
+        let room = socket.roomObject
+        if(!room) return
+        io.to(room.authority).emit(utils.msg().tryGetPowerGem, socket.playerSlot) //ask the authority if this person should be allowed to get the power gem
+    })
+
+    //this is the authority telling everyone to assign someone as the new gem holder
+    socket.on(utils.msg().assignGemHolder, function(data){
+        let playerSlot = data
+        BroadcastToAllRoomsOf(socket, utils.msg().assignGemHolder, data)
+    })
+
+    socket.on(utils.msg().removePowerGemFrom, function(data){
+        let playerSlot = data
+        BroadcastToAllRoomsOf(socket, utils.msg().removePowerGemFrom, data)
+    })
+
+    socket.on(utils.msg().givePowerGemData, function(data){
+        let sendToSlot = data[0]
+        let gemHolderSlot = data[1]
+        let s = FindSocketInRoomBySlot(socket.roomObject, sendToSlot)
+        if(!s) return
+        let newData = gemHolderSlot
+        io.to(s.id).emit(utils.msg().givePowerGemData, newData)
     })
 
     //when the client first joins it tells the server to have it join the Title Screen room
@@ -672,7 +708,11 @@ class RoomData{
         socket.emit('setAuthority', [this.authority, this.authoritySocket.playerSlot]) //tell the client who the authority of the room is
         socket.emit('joinedRoomCreateLocalPlayer') //begin the process of the client creating their local player
         socket.emit(utils.msg().reportRoomInfo, this.roomId) //. NOT NEEDED. just reports debug info to the client about what room they just joined. uncomment whenever
-        if(this.clientCount == 1) socket.emit(utils.msg().firstPlayerSpawnNpcs) //you are the only one in this room, so spawn the initial set of npcs because there arent any existing yet
+        if(this.clientCount == 1) socket.emit(utils.msg().firstPlayerJoinedRoom) //if this is the first person to join the room then the "game" essentially does not exist yet - there are no npcs and such, so send this message to initialize all the things the first authority must take care of for the game to be exist
+        if(this.clientCount != 1){
+            //if you are the first player to join the room you dont need to do this, but otherwise when you join a room, ask where the power gem currently is, so it can be created on our side too
+            room.RequestPowerGemDataFor(socket)
+        }
     }
 
     Leave(socket, callback){
@@ -706,6 +746,7 @@ class RoomData{
             let s = this.clients[i]
             if(s.id == socket.id) continue //skip historical data about yourself, you are already spawned for yourself. this is for spawning players who existed before you joined
             //data.push([s.id, s.spriteId, s.spriteName, s.overlayData, s.playerSlot])
+            if(!s.spriteId && s.spriteId !== 0) continue //. if they have no spriteId yet, they are a client in this room but they have not had time yet to spawn their player object, so just skip them, they arent ready - if we sent this it would tell them to spawn a remote player with spriteId null at x null and y null, we had this problem before
             data.push([s.id, s.spriteId, s.spriteName, s.playerSlot, s.x, s.y])
         }
         socket.emit('spawnPastPlayers', data)
@@ -719,6 +760,12 @@ class RoomData{
     ReceiveFullNpcList(socketId, npcData){
         let socket = this.FindClientInRoomById(socketId)
         socket.emit('spawnPastNPCs', npcData)
+    }
+
+    //for the new player who has just joined, we now ask the authority to send them the data of where the power gem is and such, so that it can appear on the new player's screen too
+    RequestPowerGemDataFor(socket){
+        if(this.authority == socket.id) return //you dont need it if you are the authority - you already have it
+        io.to(this.authority).emit(utils.msg().requestPowerGemData, socket.playerSlot)
     }
 
     //. by socket.id that is

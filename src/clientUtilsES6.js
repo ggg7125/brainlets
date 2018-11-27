@@ -12,6 +12,11 @@ export function InSafeZone(x, y){
     return false
 }
 
+export function InWorldBounds(x,y){
+    if(x < 0 || x > game.scene.scenes[1].worldBoundsX || y < 0 || y > game.scene.scenes[1].worldBoundsY) return false
+    return true
+}
+
 export function NetExplosion(x, y, size){
     if(socket.id != authority) return
     socket.emit(utils.msg().explosion, [x, y, size])
@@ -30,4 +35,18 @@ export function LocalExplosion(x, y, size){
     setTimeout(function(){
         e.destroy()
     }, 2000)
+}
+
+//teleport the sprite and tell everyone else to do the same on their side - prevents other sides having to wait on the next globalpositionupdate netvar thing to arrive before the sprite moves - for example when they kill a sprite, there is this lag where the sprite just lingers before actually disappearing - this should fix that
+export function NetTeleport(sprite, x, y){
+    sprite.posUpdate = [x,y] //we set these because if we dont LerpToPosUpdate is just going to put them back to this position until the next pos update arrives to tell them otherwise - which completely overrides our teleport coordinates by setting them back to the last sent update otherwise
+    sprite.slowPosUpdate = [x,y]
+    sprite.setPosition(x,y)
+    socket.emit(utils.msg().setPosition, [sprite.spriteId, x, y])
+}
+
+export function SendToRandomMapPosition(sprite){
+    let x = Phaser.Math.RND.between(500, game.scene.scenes[1].worldBoundsX - 500)
+    let y = Phaser.Math.RND.between(500, game.scene.scenes[1].worldBoundsY - 500)
+    sprite.setPosition(x,y)
 }
