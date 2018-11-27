@@ -445,7 +445,7 @@ export function CreateLocalPlayer(newSpriteId, spriteName, playerSlot){
         hat.Equip()
     }, 150) //we do 150 ms to just account for jitter to make sure our RemotePlayer is created by the time we add these here overlays and they get emitted, if theres no RemotePlayer to receive them yet due to jitter, then the emits get ignored
     setTimeout(function(){
-        HelpPopup(`The red dot (bottom right) is the INFINITY STONE - It gives massive power to who holds it - If you can keep it...`, 6500)
+        HelpPopup(`The red dot (bottom right) is the POWER GEM - It gives massive power to who holds it - If you can keep it...`, 6500)
     }, 5000)
 }
 
