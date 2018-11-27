@@ -1228,7 +1228,7 @@ export class Player extends Entity{
         //. WARNING WARNING: Player & RemotePlayer MUST HAVE THE SAME EXACT SET OF NETVARS DEFINED, NOT MORE NOT LESS. BECAUSE OTHERWISE IT MESSES UP THE INDEX SENT BECAUSE WE ARE SENDING A NETVAR FROM PLAYER TO REMOTEPLAYER WHO IT VIEWS AS THE SAME OBJECT, AND VICE VERSA. IT SIMPLY WILL NOT WORK. TREAT THESE TWO CLASSES THE SAME AS FAR AS NETVARS GO.
 
         setInterval(function(){
-            self.AddMoney(100)
+            self.AddMoney(1)
         }, 1000)
 
         this.collisionDelegates.push(function(body){
