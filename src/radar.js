@@ -1,5 +1,6 @@
 import { game } from "./index";
 import { RadarDot } from "./classes";
+import { InWorldBounds } from "./clientUtilsES6";
 var utils = require('../utils')
 
 var dots = [] //dots that the radar will update
@@ -55,9 +56,14 @@ export function StartRadar(){
 export function RefreshRadar(){
     if(!radarStarted) return
     for(let dot of dots){
-        if(dot.radarSprite.x < 0 || dot.radarSprite.x > worldWidth){
+        if(!dot.radarSprite){
+            dots = utils.remove(dots, dot)
+            dot.destroy()
+            continue
+        }
+        if(!InWorldBounds(dot.radarSprite.x, dot.radarSprite.y)){
             if(dot.visible) dot.setVisible(false)
-            continue //they are off the map cached somewhere we dont want to display that            
+            continue
         }
         if(!dot.visible) dot.setVisible(true)
         let xFrac = dot.radarSprite.x / worldWidth //what fraction across the world this sprite is
