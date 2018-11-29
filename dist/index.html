@@ -12,7 +12,7 @@
             padding: 0;
         }
     </style>
-    <title>Brainlets.io</title>
+    <title>Brainlets: Brain War Chronicles</title>
     <link rel='stylesheet' type='text/css' href='index.css'>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.slim.js"></script>
     <script type="text/javascript" src="bundle.js"></script>
@@ -38,7 +38,7 @@
 
         <div id="titleUI" hidden='true'> <!-- it becomes unhidden when the title scene in the scenes js file loading bar reaches 100% -->
             <div id="gameTitle">
-                Hello.io
+                Brainlets: Brain War Chronicles
             </div>
             <div id='launchTime'>
                 Game Launched X Days Ago
@@ -48,28 +48,19 @@
                 <button id='playButton'>Play</button>
             </div>
             <div id='infoBox'>
-                <a href="https://iogame102.herokuapp.com">Click here to play on the main website, it runs faster!</a>
+                <a href="https://brainlets.space">Click here to play on the main website, it runs faster!</a>
                 <br><br>
-                How to play:<br>
+                Welcome to Brainlets: Brain War Chronicles. The war for the last brain on Earth has begun!
+                <br><br>
                 WASD / Arrows moves.<br>
                 Left Mouse Button (Or Z, or N): Use ability #1<br>
                 Right Mouse Button (Or X, or M): Use ability #2<br>
-                Enter to Talk<br>
-                <br>
-                When standing on a Weapon Platform press a mouse button to swap to it<br>
-                <br>
-                When standing on a Hat Platform press left mouse button to wear it<br>
+                Enter to Talk<br>                
                 <br>
                 Radar (bottom right) shows you where everything is
                 <br>
                 <div id='infoBoxLeftAlign'>
-                    Stats:<br>
-                    Power: Do more damage<br>
-                    Durability: Take more damage<br>
-                    Speed: Move faster, attack faster<br>
-                    Stamina: Don't get exhausted as fast<br>
-                    Vitality: Heal faster<br>
-                    Spirit: See farther - increase attack range - gain passive xp<br>
+                    
                 </div>
             </div>
         </div>
@@ -87,9 +78,11 @@
             <div id='healthBar' class='allBars'></div>
             <div id='healthBarText'>Health</div>
 
+            <!--
             <div id='staminaBarBackground' class='allBars'></div>
             <div id='staminaBar' class='allBars'></div>
             <div id='staminaBarText'>Stamina</div>
+            -->
         </div>
 
         <div id='levelUI' class='levelUI' hidden='true'>
@@ -136,7 +129,7 @@
         <div id='wrongVersion' hidden='true'>
             <p>Wrong game version. We could not connect!</p>
             <br><br>
-            <a href="https://iogame102.herokuapp.com">Click here to play on the main website!</a>
+            <a href="https://brainlets.space">Click here to play on the main website!</a>
         </div>
     </div>
 </body>
