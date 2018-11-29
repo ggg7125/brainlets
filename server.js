@@ -1,4 +1,4 @@
-//* our https code wasnt working on heroku so we are back to http for now, heroku gives you an https address anyway so i guess it doesnt matter
+//* our https code wasnt working on heroku so we are back to http for now, heroku gives you an https address anyway so i guess it doesnt matter - netlify also has https automatic
 
 module.exports = {
     GetIO: GetIO,
@@ -700,8 +700,12 @@ class RoomData{
         this.IfNoAuthorityFindAuthority()
         socket.join(this.roomId.toString(), function(err){
             if(callback) callback(err)
-            room.SendExistingPlayers(socket)
-            room.RequestExistingNpcsFor(socket)
+            //we delay this because it seems to behave better - their local client gets time to be told what room theyre apart of and who the authority of that room is - it seems to stop a bug where sometimes a player joining near the exact same time as you just isnt sent to you and is therefore invisible because your side just wasnt set up yet to receive that message - this is all just guessing though
+            setTimeout(function(){
+                if(!socket || !room) return
+                room.SendExistingPlayers(socket)
+                room.RequestExistingNpcsFor(socket)
+            }, 1000)
         })
         this.IfAuthorityIsInvalidButIAmValidMakeMeAuthority(socket) //in a room with 1 player for example, someone has to be authority, even if its a player that is inactive in another tab with a frozen game. but this presents the problem of new players joining only to be stuck in a room with a sleeping authority and the game will not be updating at all for them. so if a player logs into a room where the only available authority is currently asleep, switch authority to this newly connecting client who is clearly a better candidate and not asleep and they will be the authority
 
