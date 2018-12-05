@@ -6,3 +6,7 @@ export function Distance(x1, y1, x2, y2){
     let dy = y1 - y2
     return Math.sqrt(dx * dx + dy * dy)
 }
+
+export function Pick(list){
+    return list[Math.floor(Math.random() * list.length)]
+}
