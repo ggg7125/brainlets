@@ -246,6 +246,7 @@ io.on("connection", function(socket){
 
     //this is someone who has crossed the power gem and is trying to pick it up - it will be relayed to the authority who will determine if they should be allowed to get it
     socket.on(utils.msg().tryGetPowerGem, function(data){
+        //console.log('.tryGetPowerGem (server)')
         let room = socket.roomObject
         if(!room) return
         io.to(room.authority).emit(utils.msg().tryGetPowerGem, socket.playerSlot) //ask the authority if this person should be allowed to get the power gem
@@ -253,16 +254,19 @@ io.on("connection", function(socket){
 
     //this is the authority telling everyone to assign someone as the new gem holder
     socket.on(utils.msg().assignGemHolder, function(data){
+        //console.log('.assignGemHolder (server)')
         let playerSlot = data
         BroadcastToAllRoomsOf(socket, utils.msg().assignGemHolder, data)
     })
 
     socket.on(utils.msg().removePowerGemFrom, function(data){
+        //console.log('.removePowerGemFrom (server)')
         let playerSlot = data
         BroadcastToAllRoomsOf(socket, utils.msg().removePowerGemFrom, data)
     })
 
     socket.on(utils.msg().givePowerGemData, function(data){
+        //console.log('.givePowerGemData (server)')
         let sendToSlot = data[0]
         let gemHolderSlot = data[1]
         let s = FindSocketInRoomBySlot(socket.roomObject, sendToSlot)
